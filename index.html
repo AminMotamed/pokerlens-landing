@@ -152,6 +152,7 @@
       will-change: transform, width, height;
     }
     .magnetic-circle.active { width: 180px; height: 180px; }
+    @media (max-width: 768px) { .magnetic-circle { display: none !important; } .magnetic-wrap { cursor: auto; } }
     .magnetic-inner {
       position: absolute;
       display: flex; align-items: center; justify-content: center;
@@ -1347,6 +1348,7 @@
     const circle = document.getElementById('magnetic-circle');
     const inner  = document.getElementById('magnetic-inner');
     if (!wrap || !circle || !inner) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const mouse  = { x: 0, y: 0 };
     const cur    = { x: 0, y: 0 };
