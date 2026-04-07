@@ -1,82 +1,1575 @@
 <!DOCTYPE html>
-  <html lang="fr">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokerLens — Analyse de mains poker avancée</title>
-  <meta name="description" content="PokerLens est un outil d'analyse de mains poker professionnel. Importez vos historiques, analysez vos exploits positionnels et améliorez votre jeu.">
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokerLens — Cash Game HUD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; }
-        header { background: #161b22; border-bottom: 1px solid #30363d; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
-    header h1 { font-size: 1.5rem; color: #58a6ff; }
-    .hero { text-align: center; padding: 5rem 2rem; }
-    .hero h2 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; }
-    .hero h2 span { color: #58a6ff; }
-    .hero p { font-size: 1.2rem; color: #8b949e; max-width: 600px; margin: 0 auto 2rem; }
-    .btn { display: inline-block; background: #238636; color: #fff; padding: 0.8rem 2rem; border-radius: 6px; text-decoration: none; font-size: 1rem; font-weight: 600; }
-        .btn:hover { background: #2ea043; }
-    .btn-secondary { background: #21262d; border: 1px solid #30363d; }
-    .btn-secondary:hover { background: #30363d; }
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 3rem 4rem; max-width: 1200px; margin: 0 auto; }
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; }
-    .card h3 { color: #58a6ff; margin-bottom: 0.5rem; font-size: 1.1rem; }
-    .card p { color: #8b949e; font-size: 0.95rem; line-height: 1.6; }
-    .card .icon { font-size: 2rem; margin-bottom: 0.8rem; }
-    footer { text-align: center; padding: 2rem; color: #8b949e; border-top: 1px solid #30363d; margin-top: 3rem; }
-    footer a { color: #58a6ff; text-decoration: none; }
+    /* ══════════════════════════════════════════
+       RESET & BASE
+    ══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0a0a0b;
+      --surface:  #1a1a1d;
+      --surface-2:#222226;
+      --border:   rgba(255,255,255,.07);
+      --border-2: rgba(255,255,255,.11);
+      --accent:   #4f8ef7;
+      --accent-glow: rgba(79,142,247,.12);
+      --green:    #22C55E;
+      --red:      #EF4444;
+      --amber:    #F59E0B;
+      --text:     #E6E6E8;
+      --muted:    #888C95;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ══════════════════════════════════════════
+       NAV
+    ══════════════════════════════════════════ */
+    nav {
+      position: fixed; top: 1.5rem; right: 2rem; z-index: 100;
+      opacity: 0;
+      transition: opacity .6s ease;
+      pointer-events: none;
+    }
+    nav.nav-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: .55rem;
+      text-decoration: none; color: var(--text);
+    }
+    .nav-logo-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, #1a3a7a, #0d2050);
+      border: 1px solid rgba(79,142,247,.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--accent);
+    }
+    .nav-logo-name { font-size: .95rem; font-weight: 700; letter-spacing: -.02em; }
+    .nav-logo-sub  { font-size: .65rem; color: var(--muted); font-weight: 500; margin-left: .1rem; }
+
+    .nav-cta {
+      background: rgba(28,28,30,.85); color: var(--text);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: .55rem 1.3rem; border-radius: 999px; font-size: .8rem;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      text-decoration: none; display: inline-flex; align-items: center;
+      transition: background .2s, transform .15s;
+      box-shadow: 0 4px 20px rgba(0,0,0,.35);
+    }
+    .nav-cta:hover { background: rgba(45,45,48,.9); transform: translateY(-1px); }
+
+    /* ══════════════════════════════════════════
+       SECTIONS & LAYOUT
+    ══════════════════════════════════════════ */
+    section { padding: 5rem 2rem; max-width: 1060px; margin: 0 auto; }
+    .section-full { max-width: 100%; padding: 5rem 2rem; }
+    .section-full > .inner { max-width: 1060px; margin: 0 auto; }
+
+    /* ══════════════════════════════════════════
+       HERO SECTION
+    ══════════════════════════════════════════ */
+    .hero-section {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 2rem 4rem;
+      position: relative; gap: 0;
+    }
+    .hero-phrase { margin-bottom: 2.5rem; }
+    .magnetic-wrap { margin-bottom: 5.5rem; }
+    .lmb-outer { margin-bottom: 2.5rem; }
+    #hero-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
+    .hero-section::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 280px;
+      background: linear-gradient(to bottom, transparent, #0a0a0b);
+      pointer-events: none; z-index: 1;
+    }
+    .hero-glow { display: none; }
+    .hero-section > *:not(#hero-canvas) { position: relative; z-index: 2; }
+
+    /* ── Cycling phrase ── */
+    .hero-phrase {
+      font-size: clamp(.75rem, 1.4vw, .88rem);
+      font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--muted); height: 1.2em; overflow: hidden;
+      text-shadow: 0 0 20px rgba(0,0,0,.9), 0 2px 12px rgba(0,0,0,.8);
+    }
+    .hero-phrase-text {
+      display: block;
+      animation: phraseSlide 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes phraseSlide {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes phraseOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-12px); }
+    }
+
+    /* ── Magnetic text ── */
+    .magnetic-wrap {
+      position: relative; display: inline-flex;
+      align-items: center; justify-content: center;
+      cursor: none; user-select: none;
+      padding: .5rem 1rem;
+    }
+    .magnetic-base {
+      font-size: clamp(3.5rem, 10vw, 7rem);
+      font-weight: 800; letter-spacing: -.05em; line-height: 1;
+      color: var(--text);
+    }
+    .magnetic-circle {
+      position: absolute; top: 0; left: 0;
+      border-radius: 50%; overflow: hidden;
+      background: var(--text);
+      width: 0; height: 0;
+      pointer-events: none;
+      transition: width .5s cubic-bezier(0.33,1,0.68,1),
+                  height .5s cubic-bezier(0.33,1,0.68,1);
+      will-change: transform, width, height;
+    }
+    .magnetic-circle.active { width: 180px; height: 180px; }
+    .magnetic-inner {
+      position: absolute;
+      display: flex; align-items: center; justify-content: center;
+      will-change: transform;
+    }
+    .magnetic-hover-text {
+      font-size: clamp(3.5rem, 10vw, 7rem);
+      font-weight: 800; letter-spacing: -.05em; line-height: 1;
+      color: var(--bg); white-space: nowrap;
+    }
+
+    /* ── Scroll cue ── */
+    .hero-scroll {
+      display: flex; flex-direction: column; align-items: center; gap: .45rem;
+      font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--muted); opacity: .55; margin-top: 1rem;
+    }
+    .hero-scroll-line {
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, transparent, var(--muted));
+      animation: scrollLine 2s ease-in-out infinite;
+    }
+    @keyframes scrollLine {
+      0%,100% { transform: scaleY(1); opacity: .4; }
+      50%      { transform: scaleY(1.3); opacity: 1; }
+    }
+
+    /* ── Buttons ── */
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      padding: .7rem 1.7rem; border-radius: 999px; font-size: .88rem;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+      text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
+      transition: opacity .15s, transform .12s, box-shadow .15s;
+      box-shadow: 0 4px 18px rgba(79,142,247,.3);
+    }
+    .btn-primary:hover { opacity: .88; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(79,142,247,.4); }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border-2); padding: .7rem 1.5rem;
+      border-radius: 999px; font-size: .88rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; text-decoration: none;
+      display: inline-flex; align-items: center; gap: .4rem;
+      transition: background .13s, border-color .13s;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.2); }
+
+    /* ── Liquid Metal Button ── */
+    .lmb-outer {
+      perspective: 1000px;
+      perspective-origin: 50% 50%;
+      display: inline-block;
+    }
+    .lmb-wrap {
+      position: relative;
+      width: 210px; height: 58px;
+      transform-style: preserve-3d;
+    }
+    .lmb-label-layer {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      transform: translateZ(20px);
+      z-index: 30; pointer-events: none;
+    }
+    .lmb-label {
+      font-size: 15px; font-weight: 600;
+      color: #fff; letter-spacing: .01em;
+      text-shadow: 0 1px 4px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.6);
+      white-space: nowrap;
+      transition: color .3s;
+    }
+    .lmb-wrap:hover .lmb-label { color: #fff; }
+    .lmb-inner-layer {
+      position: absolute; inset: 0;
+      transform: translateZ(10px);
+      z-index: 20; pointer-events: none;
+      transition: transform .8s cubic-bezier(.34,1.56,.64,1);
+    }
+    .lmb-wrap:active .lmb-inner-layer { transform: translateZ(10px) translateY(1px) scale(.99); }
+    .lmb-pill {
+      width: 206px; height: 54px;
+      margin: 2px;
+      border-radius: 100px;
+      background: linear-gradient(180deg, #202020 0%, #000 100%);
+      transition: box-shadow .3s;
+    }
+    .lmb-wrap:active .lmb-pill {
+      box-shadow: inset 0 2px 4px rgba(0,0,0,.4), inset 0 1px 2px rgba(0,0,0,.3);
+    }
+    .lmb-shader-layer {
+      position: absolute; inset: 0;
+      transform: translateZ(0px);
+      z-index: 10; pointer-events: none;
+      transition: transform .8s cubic-bezier(.34,1.56,.64,1);
+    }
+    .lmb-shader-container {
+      position: relative;
+      width: 210px; height: 58px;
+      border-radius: 100px; overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 36px 14px 0 rgba(0,0,0,.25), 0 16px 10px 0 rgba(0,0,0,.2);
+      transition: box-shadow .4s;
+    }
+    .lmb-wrap:hover .lmb-shader-container {
+      box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 12px 6px 0 rgba(0,0,0,.22), 0 6px 4px 0 rgba(0,0,0,.18);
+    }
+    #lmb-canvas {
+      position: absolute; inset: 0;
+      width: 100% !important; height: 100% !important;
+      border-radius: 100px; display: block;
+    }
+    .lmb-btn {
+      position: absolute; inset: 0;
+      width: 210px; height: 58px;
+      background: transparent; border: none;
+      cursor: pointer; outline: none;
+      z-index: 40; border-radius: 100px;
+      transform: translateZ(25px);
+      overflow: hidden;
+    }
+    .lmb-ripple {
+      position: absolute; width: 20px; height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+      animation: lmb-ripple .6s ease-out forwards;
+      transform: translate(-50%,-50%) scale(0);
+    }
+    @keyframes lmb-ripple {
+      0%   { transform: translate(-50%,-50%) scale(0); opacity: .6; }
+      100% { transform: translate(-50%,-50%) scale(4); opacity: 0; }
+    }
+
+    /* ══════════════════════════════════════════
+       SCROLL REVEAL
+    ══════════════════════════════════════════ */
+    [data-reveal] {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .75s cubic-bezier(0.22,1,0.36,1),
+                  transform .75s cubic-bezier(0.22,1,0.36,1);
+    }
+    [data-reveal].revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    [data-reveal="left"] { transform: translateX(-32px); }
+    [data-reveal="left"].revealed { transform: translateX(0); }
+    [data-reveal="right"] { transform: translateX(32px); }
+    [data-reveal="right"].revealed { transform: translateX(0); }
+    [data-reveal="scale"] { transform: scale(.96) translateY(16px); }
+    [data-reveal="scale"].revealed { transform: scale(1) translateY(0); }
+    [data-reveal="line"] { transform: scaleY(0); transform-origin: top; }
+    [data-reveal="line"].revealed { transform: scaleY(1); }
+
+    /* ══════════════════════════════════════════
+       SECTION DIVIDER
+    ══════════════════════════════════════════ */
+    .section-line {
+      width: 1px; height: 80px; margin: 0 auto;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,.12), transparent);
+    }
+
+    /* ══════════════════════════════════════════
+       FEATURES
+    ══════════════════════════════════════════ */
+    .features-label {
+      text-align: center; font-size: .65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .18em; color: var(--muted);
+      margin-bottom: .9rem;
+    }
+    .features-title {
+      text-align: center; font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 800; letter-spacing: -.04em; margin-bottom: .9rem;
+      line-height: 1.1;
+    }
+    .features-sub {
+      text-align: center; color: var(--muted); max-width: 480px;
+      margin: 0 auto; font-size: 1rem; line-height: 1.75;
+    }
+
+    .feature-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+      align-items: center; margin-bottom: 5.5rem;
+    }
+    .feature-row.reverse { direction: rtl; }
+    .feature-row.reverse > * { direction: ltr; }
+    @media (max-width: 768px) {
+      .feature-row { grid-template-columns: 1fr; direction: ltr !important; }
+      .feature-row > * { direction: ltr !important; }
+    }
+
+    .feature-text { display: flex; flex-direction: column; gap: .8rem; }
+    .feature-tag {
+      display: inline-flex; align-items: center; gap: .35rem;
+      font-size: .65rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .feature-name {
+      font-size: clamp(1.2rem, 2.5vw, 1.65rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.2;
+    }
+    .feature-desc { color: var(--muted); font-size: .92rem; line-height: 1.7; }
+    .feature-points { list-style: none; display: flex; flex-direction: column; gap: .5rem; margin-top: .3rem; }
+    .feature-points li {
+      display: flex; align-items: flex-start; gap: .55rem;
+      font-size: .88rem; color: var(--muted);
+    }
+    .feature-points li::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0; margin-top: .42rem;
+    }
+
+    /* ══════════════════════════════════════════
+       MOCKUP CARDS (shared shell)
+    ══════════════════════════════════════════ */
+    .mockup-card {
+      background: var(--surface);
+      border: 1px solid var(--border-2);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    }
+    .mockup-titlebar {
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      padding: .55rem .9rem;
+      display: flex; align-items: center; gap: .45rem;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-red { background: #ff5f57; }
+    .dot-amber { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    .mockup-titlebar-name {
+      font-size: .65rem; color: var(--muted); font-weight: 500;
+      margin-left: .3rem; letter-spacing: .02em;
+    }
+    .mockup-body { padding: 1rem 1.1rem; }
+
+    /* ── Mockup: Players table ── */
+    .mk-table { width: 100%; border-collapse: collapse; font-size: .76rem; }
+    .mk-table th {
+      text-align: left; font-size: .6rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em; color: var(--muted);
+      padding: .3rem .5rem; border-bottom: 1px solid var(--border);
+    }
+    .mk-table td { padding: .46rem .5rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .mk-table tr:last-child td { border-bottom: none; }
+    .mk-table tr:hover td { background: rgba(255,255,255,.025); }
+    .mk-name { font-weight: 600; color: var(--text); }
+    .mk-stat { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .mk-stat.green { color: var(--green); }
+    .mk-stat.red   { color: var(--red); }
+    .mk-stat.accent { color: var(--accent); }
+    .mk-badge {
+      display: inline-block; font-size: .58rem; font-weight: 700;
+      padding: .1rem .45rem; border-radius: 999px;
+    }
+    .mk-badge-blue   { background: rgba(79,142,247,.12); color: var(--accent); border: 1px solid rgba(79,142,247,.2); }
+    .mk-badge-amber  { background: rgba(245,158,11,.1);  color: var(--amber);  border: 1px solid rgba(245,158,11,.2); }
+    .mk-badge-red    { background: rgba(239,68,68,.1);   color: var(--red);    border: 1px solid rgba(239,68,68,.2); }
+    .mk-badge-muted  { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Mockup: KPI strip ── */
+    .mk-kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: .55rem; }
+    .mk-kpi-card {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 10px; padding: .75rem .7rem;
+    }
+    .mk-kpi-lbl { font-size: .55rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .25rem; }
+    .mk-kpi-val { font-size: 1.35rem; font-weight: 700; line-height: 1; letter-spacing: -.025em; }
+    .mk-kpi-ctx { font-size: .65rem; color: var(--muted); margin-top: .1rem; }
+    .mk-player-header {
+      display: flex; align-items: center; gap: .6rem;
+      margin-bottom: .85rem; padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .mk-player-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(79,142,247,.15); border: 1px solid rgba(79,142,247,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .6rem; font-weight: 800; color: var(--accent);
+    }
+    .mk-player-name { font-size: .82rem; font-weight: 700; }
+    .mk-player-meta { font-size: .62rem; color: var(--muted); }
+
+    /* ── Mockup: Leaks ── */
+    .mk-leak {
+      border-left: 3px solid; border-radius: 0 8px 8px 0;
+      padding: .55rem .75rem; margin-bottom: .5rem;
+      background: rgba(255,255,255,.02);
+    }
+    .mk-leak:last-child { margin-bottom: 0; }
+    .mk-leak.critical { border-color: var(--red); }
+    .mk-leak.warning  { border-color: var(--amber); }
+    .mk-leak.info     { border-color: var(--accent); }
+    .mk-leak-title { font-size: .75rem; font-weight: 700; margin-bottom: .12rem; }
+    .mk-leak.critical .mk-leak-title { color: var(--red); }
+    .mk-leak.warning  .mk-leak-title { color: var(--amber); }
+    .mk-leak.info     .mk-leak-title { color: var(--accent); }
+    .mk-leak-desc { font-size: .68rem; color: var(--muted); line-height: 1.45; }
+
+    /* ── Mockup: Poker table ── */
+    .mk-poker-wrap { padding: 1.1rem; display: flex; flex-direction: column; gap: .8rem; }
+    .mk-felt {
+      position: relative; width: 100%; height: 160px;
+      background: radial-gradient(ellipse at 50% 40%, #1e7a3c 0%, #115a25 50%, #092e15 100%);
+      border-radius: 50%;
+      border: 7px solid #2c1d0e;
+      box-shadow: inset 0 -3px 10px rgba(0,0,0,.3), 0 4px 20px rgba(0,0,0,.5);
+    }
+    .mk-felt::after {
+      content: ''; position: absolute; inset: 10px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.06); pointer-events: none;
+    }
+    .mk-pot {
+      position: absolute; top: 28%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,.6); border: 1px solid rgba(255,215,0,.22);
+      border-radius: 999px; padding: .15rem .6rem;
+      font-size: .6rem; font-weight: 700; color: #fcd34d; white-space: nowrap;
+      z-index: 5;
+    }
+    .mk-board {
+      position: absolute; top: 52%; left: 50%; transform: translate(-50%,-50%);
+      display: flex; gap: .2rem; z-index: 5;
+    }
+    .mk-card {
+      width: 24px; height: 34px; border-radius: 3px;
+      background: #f9f9f8; border: 1px solid rgba(0,0,0,.1);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; font-weight: 800; line-height: 1;
+      box-shadow: 0 2px 6px rgba(0,0,0,.45);
+      font-size: .55rem;
+    }
+    .mk-card.red { color: #dc2626; }
+    .mk-card.black { color: #111; }
+    .mk-seat {
+      position: absolute; text-align: center; transform: translate(-50%,-50%);
+      z-index: 10;
+    }
+    .mk-seat-name {
+      font-size: .52rem; font-weight: 700; color: #e2e8f0;
+      background: rgba(0,0,0,.65); border-radius: 999px; padding: .1rem .4rem;
+      white-space: nowrap; display: inline-block; border: 1px solid rgba(255,255,255,.07);
+    }
+    .mk-seat-name.hero-seat { color: #7aacff; border-color: rgba(79,142,247,.3); }
+    .mk-seat-stack { font-size: .47rem; color: rgba(255,255,255,.35); margin-top: .07rem; }
+    .mk-controls {
+      display: flex; align-items: center; gap: .4rem; justify-content: center;
+    }
+    .mk-ctrl {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--muted); font-size: .65rem;
+      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    }
+    .mk-progress {
+      flex: 1; height: 3px; background: rgba(255,255,255,.07);
+      border-radius: 999px; overflow: hidden;
+    }
+    .mk-progress-fill { width: 40%; height: 100%; background: var(--accent); border-radius: 999px; }
+    .mk-step { font-size: .6rem; color: var(--muted); }
+
+    /* ── Mockup: Session summary ── */
+    .mk-session-banner {
+      background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.2);
+      border-radius: 10px; padding: .7rem 1rem; margin-bottom: .85rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mk-session-result { font-size: 1.2rem; font-weight: 800; color: var(--green); letter-spacing: -.03em; }
+    .mk-session-meta { font-size: .65rem; color: var(--muted); }
+    .mk-session-meta span { color: var(--text); font-weight: 600; }
+    .mk-session-cols { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .mk-session-col-title {
+      font-size: .58rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .09em; color: var(--muted); margin-bottom: .4rem;
+    }
+    .mk-session-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .7rem; padding: .22rem 0;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .mk-session-row:last-child { border-bottom: none; }
+    .mk-session-player { color: var(--text); font-weight: 500; }
+
+    /* ══════════════════════════════════════════
+       ACCESS FORM
+    ══════════════════════════════════════════ */
+    .access-section {
+      position: relative; overflow: hidden;
+      padding: 10rem 2rem;
+      background: var(--bg);
+    }
+    .access-section::before {
+      content: '';
+      position: absolute; top: -120px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .access-inner { max-width: 500px; margin: 0 auto; position: relative; }
+    .access-label {
+      font-size: .65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .18em; color: var(--muted); margin-bottom: .9rem;
+      display: block;
+    }
+    .access-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800; letter-spacing: -.045em; margin-bottom: .8rem;
+      line-height: 1.05;
+    }
+    .access-sub {
+      color: var(--muted); font-size: .9rem; line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+    .form-field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .75rem; }
+    .form-label { font-size: .72rem; font-weight: 600; color: var(--muted); }
+    .form-input, .form-textarea {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px; color: var(--text); font-family: inherit;
+      font-size: .88rem; padding: .72rem .95rem; outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+      width: 100%;
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: rgba(136,140,149,.4); }
+    .form-input:focus, .form-textarea:focus {
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.04);
+    }
+    .form-textarea { resize: vertical; min-height: 100px; line-height: 1.55; }
+    .form-submit {
+      width: 100%; background: #fff; color: #0a0a0b; border: none;
+      padding: .82rem 1.5rem; border-radius: 10px; font-size: .9rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: -.01em;
+      transition: opacity .2s, transform .15s;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+    }
+    .form-submit:hover { opacity: .88; transform: translateY(-1px); }
+    .form-submit:disabled { opacity: .4; cursor: default; transform: none; }
+    .form-success {
+      display: none; text-align: center; padding: 2rem;
+      background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.2);
+      border-radius: 12px;
+    }
+    .form-success-icon { font-size: 2.2rem; margin-bottom: .6rem; }
+    .form-success-title { font-size: 1.1rem; font-weight: 700; margin-bottom: .4rem; }
+    .form-success-sub { font-size: .88rem; color: var(--muted); }
+    .form-note { font-size: .72rem; color: var(--muted); text-align: center; margin-top: 1rem; line-height: 1.5; }
+
+    /* ══════════════════════════════════════════
+       GLOW CARDS
+    ══════════════════════════════════════════ */
+    .features-glow-section { padding: 8rem 2rem; max-width: 1060px; margin: 0 auto; }
+
+    .demo-rows {
+      display: flex; flex-direction: column; gap: 8rem;
+      margin-top: 5rem;
+    }
+    .demo-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    /* flip: text col comes first in DOM but appears on left visually */
+    .demo-row--flip .demo-mockup { order: 2; }
+    .demo-row--flip .demo-text   { order: 1; }
+    .demo-label {
+      font-size: .62rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .16em; color: var(--muted); margin-bottom: .5rem;
+    }
+    .demo-title {
+      font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 800;
+      letter-spacing: -.03em; line-height: 1.15;
+      margin: 0 0 1rem; color: var(--text);
+    }
+    .demo-desc {
+      font-size: 1rem; color: rgba(136,140,149,.85); line-height: 1.75;
+      margin: 0; max-width: 40ch;
+    }
+    .demo-mockup .mockup-card { width: 100%; }
+    @media (max-width: 780px) {
+      .demo-row { grid-template-columns: 1fr; gap: 1.5rem; }
+      .demo-row--flip .demo-mockup { order: 0; }
+      .demo-row--flip .demo-text   { order: 0; }
+    }
+
+    /* How it works steps */
+    .how-steps {
+      list-style: none; margin: 4rem 0 0; padding: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+      border: 1px solid rgba(255,255,255,.07); border-radius: 16px;
+      overflow: hidden;
+    }
+    @media (max-width: 700px) { .how-steps { grid-template-columns: 1fr; } }
+    .how-step {
+      display: flex; gap: 1.1rem; padding: 1.75rem 1.5rem;
+      border-right: 1px solid rgba(255,255,255,.07);
+      transition: background .15s ease, border-color .15s ease;
+      cursor: default;
+    }
+    .how-step:last-child { border-right: none; }
+    .how-step:hover { background: rgba(255,255,255,.055); }
+    .how-step:hover .how-num { color: rgba(255,255,255,.45); transition: color .15s ease; }
+    .how-step:hover strong { color: #fff; transition: color .15s ease; }
+    .how-num {
+      font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+      color: rgba(255,255,255,.18); flex-shrink: 0; padding-top: .05rem;
+      transition: color .15s ease;
+    }
+    .how-step strong {
+      display: block; font-size: 1rem; font-weight: 700;
+      color: var(--text); margin-bottom: .5rem; letter-spacing: -.01em;
+    }
+    .how-step p {
+      font-size: .9rem; color: var(--muted); line-height: 1.65; margin: 0;
+    }
+
+
+    /* GlowCard base */
+    .glow-card {
+      --border-size: calc(var(--border, 2) * 1px);
+      --spotlight-size: calc(var(--size, 260) * 1px);
+      --hue: calc(var(--base, 220) + (var(--xp, 0) * var(--spread, 200)));
+      background-image: radial-gradient(
+        var(--spotlight-size) var(--spotlight-size) at
+        calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+        hsl(var(--hue) 80% 60% / 0.10), transparent 70%
+      );
+      background-color: rgba(255,255,255,.04);
+      background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
+      background-position: 50% 50%;
+      background-attachment: fixed;
+      border: var(--border-size) solid rgba(255,255,255,.09);
+      border-radius: 16px;
+      padding: 2rem 1.75rem;
+      position: relative;
+      display: flex; flex-direction: column; gap: .85rem;
+      transition: border-color .3s;
+    }
+    .glow-card:hover { border-color: rgba(255,255,255,.16); }
+    .glow-card--wide { grid-column: 1 / -1; flex-direction: column; }
+
+    /* ::before — glowing border spotlight */
+    .glow-card::before,
+    .glow-card::after {
+      pointer-events: none; content: "";
+      position: absolute;
+      inset: calc(var(--border-size) * -1);
+      border: var(--border-size) solid transparent;
+      border-radius: 17px;
+      background-attachment: fixed;
+      background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
+      background-repeat: no-repeat;
+      background-position: 50% 50%;
+      mask: linear-gradient(transparent, transparent), linear-gradient(white, white);
+      mask-clip: padding-box, border-box;
+      mask-composite: intersect;
+    }
+    .glow-card::before {
+      background-image: radial-gradient(
+        calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at
+        calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+        hsl(var(--hue) 90% 65% / 0.7), transparent
+      );
+      filter: brightness(2);
+    }
+    .glow-card::after {
+      background-image: radial-gradient(
+        calc(var(--spotlight-size) * 0.5) calc(var(--spotlight-size) * 0.5) at
+        calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+        hsl(0 100% 100% / 0.08), transparent 100%
+      );
+    }
+    /* inner glow layer */
+    .glow-card [data-glow] {
+      position: absolute; inset: 0; pointer-events: none;
+      border-radius: 16px; border: none;
+      will-change: filter; opacity: var(--outer, 1);
+      border-width: calc(var(--border-size) * 20);
+      filter: blur(calc(var(--border-size) * 10));
+      background: none;
+    }
+    .glow-card > [data-glow]::before { inset: -10px; border-width: 10px; }
+
+    /* Card internals */
+    .gc-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: color-mix(in srgb, var(--ic, #4f8ef7) 15%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ic, #4f8ef7) 30%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ic, #4f8ef7);
+    }
+    .gc-tag {
+      font-size: .65rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .gc-title {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      font-weight: 700; letter-spacing: -.025em; line-height: 1.25;
+      color: var(--text);
+    }
+    .gc-desc {
+      font-size: .88rem; color: var(--muted); line-height: 1.65;
+    }
+    .gc-list {
+      list-style: none; display: flex; flex-direction: column; gap: .4rem;
+      margin-top: .2rem;
+    }
+    .gc-list li {
+      font-size: .82rem; color: var(--muted);
+      display: flex; align-items: center; gap: .55rem;
+    }
+    .gc-list li::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: currentColor; opacity: .5; flex-shrink: 0;
+    }
+    .gc-list--row { flex-direction: row; flex-wrap: wrap; gap: .5rem 1.5rem; }
+
+    /* ══════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════ */
+    footer {
+      padding: 2.5rem 2rem;
+      border-top: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem; max-width: 1060px; margin: 0 auto;
+    }
+    .footer-logo { display: flex; align-items: center; gap: .5rem; text-decoration: none; }
+    .footer-logo-icon {
+      width: 26px; height: 26px; border-radius: 7px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; color: var(--muted);
+    }
+    .footer-logo-name { font-size: .82rem; font-weight: 700; color: var(--muted); letter-spacing: -.01em; }
+    .footer-copy { font-size: .72rem; color: rgba(136,140,149,.4); }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      nav { padding: 0 1rem; }
+      section { padding: 3.5rem 1.25rem; }
+      .hero-section { padding: 5rem 1.25rem 3rem; }
+      .hero-stats { gap: 1.5rem; }
+      .mk-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+      .mk-session-cols { grid-template-columns: 1fr; }
+      footer { padding: 2rem 1.25rem; }
+    }
   </style>
-    </head>
-    <body>
-      <header>
-        <h1>&#9827; PokerLens</h1>
-      </header>
+</head>
+<body>
 
-      <section class="hero">
-        <h2>Analysez vos mains poker<br><span>comme un pro</span></h2>
-    <p>PokerLens est un outil d'analyse avancé pour joueurs de poker sérieux. Importez vos historiques de mains, visualisez vos stats positionnelles et progressez rapidement.</p>
-        <a href="https://github.com/AminMotamed/pokerlens/releases" class="btn">Télécharger PokerLens</a>
-        &nbsp;
-    <a href="mailto:contact@pokerlens.fr" class="btn btn-secondary">Contact</a>
-        </section>
+<!-- ══ NAV ══════════════════════════════════════════════ -->
+<nav>
+  <a href="#access-form" class="nav-cta">Demander l'accès</a>
+</nav>
 
-        <section>
-          <div class="features">
-            <div class="card">
-              <div class="icon">&#128202;</div>
-              <h3>Analyse positionnelle</h3>
-              <p>Visualisez vos performances par position (BTN, SB, BB, UTG...) et identifiez vos fuites rapidement.</p>
-            </div>
-            <div class="card">
-              <div class="icon">&#128196;</div>
-              <h3>Import multi-room</h3>
-              <p>Compatible avec Winamax, PokerStars, PMU Poker. Importez vos historiques en quelques clics.</p>
+<!-- ══ HERO ══════════════════════════════════════════════ -->
+<div class="hero-section">
+  <canvas id="hero-canvas"></canvas>
+
+  <!-- Cycling animated phrase -->
+  <div class="hero-phrase">
+    <span class="hero-phrase-text" id="hero-phrase">Voyez ce que les autres ne voient pas.</span>
+  </div>
+
+  <!-- Magnetic text — main identity -->
+  <div class="magnetic-wrap" id="magnetic-wrap">
+    <span class="magnetic-base">POKERLENS</span>
+    <div class="magnetic-circle" id="magnetic-circle">
+      <div class="magnetic-inner" id="magnetic-inner">
+        <span class="magnetic-hover-text">POKERLENS</span>
       </div>
-      <div class="card">
-        <div class="icon">&#128270;</div>
-        <h3>Replay de mains</h3>
-        <p>Rejouez vos mains clé avec une visualisation claire de l'action street par street.</p>
-            </div>
-            <div class="card">
-              <div class="icon">&#128200;</div>
-              <h3>Statistiques avancées</h3>
-        <p>VPIP, PFR, AF, 3-bet%, C-bet% et bien plus. Toutes les stats dont vous avez besoin.</p>
-            </div>
-            <div class="card">
-              <div class="icon">&#127919;</div>
-              <h3>Filtres puissants</h3>
-              <p>Filtrez par stake, période, position, type de main ou résultat pour des analyses ciblées.</p>
+    </div>
+  </div>
+
+  <!-- Liquid Metal CTA -->
+  <div class="lmb-outer" id="lmb-outer">
+    <div class="lmb-wrap">
+      <!-- Label -->
+      <div class="lmb-label-layer">
+        <span class="lmb-label">Demander l'accès</span>
       </div>
-      <div class="card">
-        <div class="icon">&#128274;</div>
-        <h3>Licence sécurisée</h3>
-        <p>Activation simple par clé de licence. Votre logiciel, vos données, en local sur votre machine.</p>
+      <!-- Inner dark pill -->
+      <div class="lmb-inner-layer" id="lmb-inner-layer">
+        <div class="lmb-pill" id="lmb-pill"></div>
+      </div>
+      <!-- Shader (chrome canvas) -->
+      <div class="lmb-shader-layer">
+        <div class="lmb-shader-container" id="lmb-shader-container">
+          <canvas id="lmb-canvas"></canvas>
+        </div>
+      </div>
+      <!-- Invisible click target -->
+      <button class="lmb-btn" id="lmb-btn" aria-label="Demander l'accès" onclick="location.href='#access-form'"></button>
+    </div>
+  </div>
+
+  <!-- Scroll cue -->
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    Défiler
+  </div>
+</div>
+
+<!-- ══ FEATURES ══════════════════════════════════════════ -->
+<section id="features" class="features-glow-section">
+  <div class="features-label" data-reveal>Comment ça fonctionne</div>
+  <h2 class="features-title" data-reveal style="transition-delay:.1s">Importez. Analysez.<br>Progressez.</h2>
+  <p class="features-sub" data-reveal style="transition-delay:.2s">Connectez vos historiques de mains en quelques secondes. PokerLens fait le reste — statistiques, fuites, profils adversaires.</p>
+
+  <!-- How it works: 3 steps -->
+  <ol class="how-steps">
+    <li class="how-step" data-reveal style="transition-delay:.25s">
+      <span class="how-num">01</span>
+      <div>
+        <strong>Importez vos mains</strong>
+        <p>Glissez vos fichiers d'historique depuis PokerStars ou Winamax. L'analyse démarre immédiatement.</p>
+      </div>
+    </li>
+    <li class="how-step" data-reveal style="transition-delay:.35s">
+      <span class="how-num">02</span>
+      <div>
+        <strong>Lisez vos données</strong>
+        <p>Chaque adversaire a son profil complet. Vos propres fuites sont détectées et expliquées clairement.</p>
+      </div>
+    </li>
+    <li class="how-step" data-reveal style="transition-delay:.45s">
+      <span class="how-num">03</span>
+      <div>
+        <strong>Ajustez votre jeu</strong>
+        <p>Exploitez les faiblesses identifiées. Corrigez les vôtres. Repassez vos mains clés dans le replayer.</p>
+      </div>
+    </li>
+  </ol>
+
+  <div class="features-label" data-reveal style="margin-top:7rem;transition-delay:0s">Aperçu de l'interface</div>
+
+  <div class="demo-rows">
+
+    <!-- Row 1: Dashboard — pic left, text right -->
+    <div class="demo-row" data-reveal>
+      <div class="demo-mockup">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <div class="dot dot-red"></div><div class="dot dot-amber"></div><div class="dot dot-green"></div>
+            <span class="mockup-titlebar-name">PokerLens · Joueurs</span>
+          </div>
+          <div class="mockup-body">
+            <table class="mk-table">
+              <thead><tr><th>Joueur</th><th>Mains</th><th>VPIP</th><th>PFR</th><th>Type</th><th>Net</th></tr></thead>
+              <tbody>
+                <tr><td class="mk-name">CashKing_77</td><td class="mk-stat">342</td><td class="mk-stat accent">31%</td><td class="mk-stat">24%</td><td><span class="mk-badge mk-badge-blue">TAG</span></td><td class="mk-stat red">−€48</td></tr>
+                <tr><td class="mk-name">PokerFish99</td><td class="mk-stat">187</td><td class="mk-stat red">52%</td><td class="mk-stat">18%</td><td><span class="mk-badge mk-badge-amber">Fish</span></td><td class="mk-stat green">+€124</td></tr>
+                <tr><td class="mk-name">BlindStealer</td><td class="mk-stat">221</td><td class="mk-stat">22%</td><td class="mk-stat">19%</td><td><span class="mk-badge mk-badge-blue">Nit</span></td><td class="mk-stat green">+€31</td></tr>
+                <tr><td class="mk-name">RunGoodRemy</td><td class="mk-stat">95</td><td class="mk-stat">28%</td><td class="mk-stat">21%</td><td><span class="mk-badge mk-badge-muted">Reg</span></td><td class="mk-stat red">−€17</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="demo-text">
+        <div class="demo-label">Dashboard</div>
+        <h3 class="demo-title">Tous vos adversaires,<br>en un coup d'œil</h3>
+        <p class="demo-desc">Un tableau centralisé de chaque joueur rencontré — VPIP, PFR, 3-Bet, archétype détecté automatiquement et résultat net contre vous. Filtrez par période, triez par stat.</p>
+      </div>
+    </div>
+
+    <!-- Row 2: Profil — text left, pic right -->
+    <div class="demo-row demo-row--flip" data-reveal>
+      <div class="demo-mockup">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <div class="dot dot-red"></div><div class="dot dot-amber"></div><div class="dot dot-green"></div>
+            <span class="mockup-titlebar-name">CashKing_77 · Profil</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mk-player-header">
+              <div class="mk-player-avatar">CK</div>
+              <div>
+                <div class="mk-player-name">CashKing_77</div>
+                <div class="mk-player-meta">342 mains · <span style="color:var(--accent)">TAG</span> · NL25</div>
+              </div>
+            </div>
+            <div class="mk-kpi-strip">
+              <div class="mk-kpi-card"><div class="mk-kpi-lbl">VPIP</div><div class="mk-kpi-val" style="color:var(--accent)">31%</div><div class="mk-kpi-ctx">Loose</div></div>
+              <div class="mk-kpi-card"><div class="mk-kpi-lbl">PFR</div><div class="mk-kpi-val" style="color:var(--text)">24%</div><div class="mk-kpi-ctx">Correct</div></div>
+              <div class="mk-kpi-card"><div class="mk-kpi-lbl">3-Bet</div><div class="mk-kpi-val" style="color:var(--green)">8.2%</div><div class="mk-kpi-ctx">Élevé</div></div>
+              <div class="mk-kpi-card"><div class="mk-kpi-lbl">AF</div><div class="mk-kpi-val" style="color:var(--text)">2.1</div><div class="mk-kpi-ctx">Normal</div></div>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
+      <div class="demo-text">
+        <div class="demo-label">Profil joueur</div>
+        <h3 class="demo-title">Le profil complet<br>de chaque adversaire</h3>
+        <p class="demo-desc">Chaque joueur a sa propre page : KPIs visuels par street et par position, historique face à vous, tendances au showdown. Ajoutez des notes et des tags manuels.</p>
+      </div>
+    </div>
 
-        <footer>
-          <p>© 2025 PokerLens — <a href="mailto:contact@pokerlens.fr">contact@pokerlens.fr</a></p>
-        </footer>
-      </body>
-      </html>
+    <!-- Row 3: Fuites — pic left, text right -->
+    <div class="demo-row" data-reveal>
+      <div class="demo-mockup">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <div class="dot dot-red"></div><div class="dot dot-amber"></div><div class="dot dot-green"></div>
+            <span class="mockup-titlebar-name">Hero · Fuites détectées</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mk-leak critical">
+              <div class="mk-leak-title">⚠ WTSD trop élevé</div>
+              <div class="mk-leak-desc">Vous allez trop souvent au showdown (58%). La norme est 28–32%. Vous payez trop sur les river bets.</div>
+            </div>
+            <div class="mk-leak warning">
+              <div class="mk-leak-title">3-Bet OOP insuffisant</div>
+              <div class="mk-leak-desc">Votre 3-bet out of position est trop faible (3.1%). Vous laissez trop d'initiative à vos adversaires.</div>
+            </div>
+            <div class="mk-leak info">
+              <div class="mk-leak-title">CBet Turn à améliorer</div>
+              <div class="mk-leak-desc">Votre continuité au turn est basse (31%). Envisagez d'être plus agressif avec vos mains de valeur.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-text">
+        <div class="demo-label">Fuites détectées</div>
+        <h3 class="demo-title">Ce qui vous coûte<br>de l'argent, identifié</h3>
+        <p class="demo-desc">PokerLens analyse vos propres statistiques et détecte les patterns problématiques — classés par sévérité, expliqués clairement, comparés aux normes de référence.</p>
+      </div>
+    </div>
+
+    <!-- Row 4: Replayer — text left, pic right -->
+    <div class="demo-row demo-row--flip" data-reveal>
+      <div class="demo-mockup">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <div class="dot dot-red"></div><div class="dot dot-amber"></div><div class="dot dot-green"></div>
+            <span class="mockup-titlebar-name">Main #5820341 · NL25</span>
+          </div>
+          <div class="mk-poker-wrap">
+            <div class="mk-felt">
+              <div class="mk-pot">Pot : €2.85</div>
+              <div class="mk-board">
+                <div class="mk-card red"><div>A</div><div>♥</div></div>
+                <div class="mk-card black"><div>K</div><div>♠</div></div>
+                <div class="mk-card red"><div>9</div><div>♦</div></div>
+              </div>
+              <div class="mk-seat" style="top:88%;left:50%;"><div class="mk-seat-name hero-seat">Hero</div><div class="mk-seat-stack">€24.50</div></div>
+              <div class="mk-seat" style="top:31%;left:12%;"><div class="mk-seat-name">CashKing_77</div><div class="mk-seat-stack">€18.20</div></div>
+              <div class="mk-seat" style="top:31%;left:88%;"><div class="mk-seat-name">PokerFish99</div><div class="mk-seat-stack">€31.00</div></div>
+            </div>
+            <div class="mk-controls">
+              <div class="mk-ctrl">⏮</div><div class="mk-ctrl">◀</div>
+              <div class="mk-progress"><div class="mk-progress-fill"></div></div>
+              <div class="mk-step">3 / 8</div>
+              <div class="mk-ctrl">▶</div><div class="mk-ctrl">⏭</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-text">
+        <div class="demo-label">Replayer</div>
+        <h3 class="demo-title">Revisionnez chaque<br>main en détail</h3>
+        <p class="demo-desc">Un replayer visuel intégré avec table ovale, positions réelles et log d'actions. Naviguez pas à pas au clavier ou en lecture automatique.</p>
+      </div>
+    </div>
+
+    <!-- Row 5: Session — pic left, text right -->
+    <div class="demo-row" data-reveal>
+      <div class="demo-mockup">
+        <div class="mockup-card">
+          <div class="mockup-titlebar">
+            <div class="dot dot-red"></div><div class="dot dot-amber"></div><div class="dot dot-green"></div>
+            <span class="mockup-titlebar-name">Résumé · Session du soir</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mk-session-banner">
+              <div>
+                <div class="mk-session-result">+€147.50</div>
+                <div style="font-size:.6rem;color:var(--green);margin-top:.1rem;">+5.9 BB/100</div>
+              </div>
+              <div class="mk-session-meta" style="text-align:right;">
+                <div><span>312</span> mains</div>
+                <div>NL25 · <span>3h</span> de jeu</div>
+              </div>
+            </div>
+            <div class="mk-session-cols">
+              <div>
+                <div class="mk-session-col-title" style="color:var(--green);">▲ Gains</div>
+                <div class="mk-session-row"><span class="mk-session-player">PokerFish99</span><span style="color:var(--green);font-size:.7rem;font-weight:700;">+€84</span></div>
+                <div class="mk-session-row"><span class="mk-session-player">RunGoodRemy</span><span style="color:var(--green);font-size:.7rem;font-weight:700;">+€63</span></div>
+                <div class="mk-session-row"><span class="mk-session-player">BlindStealer</span><span style="color:var(--green);font-size:.7rem;font-weight:700;">+€21</span></div>
+              </div>
+              <div>
+                <div class="mk-session-col-title" style="color:var(--red);">▼ Pertes</div>
+                <div class="mk-session-row"><span class="mk-session-player">CashKing_77</span><span style="color:var(--red);font-size:.7rem;font-weight:700;">−€18</span></div>
+                <div class="mk-session-row"><span class="mk-session-player">Riviera_Mike</span><span style="color:var(--red);font-size:.7rem;font-weight:700;">−€3</span></div>
+                <div class="mk-session-row" style="opacity:.3;"><span class="mk-session-player">—</span><span>—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-text">
+        <div class="demo-label">Suivi de session</div>
+        <h3 class="demo-title">Le bilan complet<br>après chaque session</h3>
+        <p class="demo-desc">Importez vos mains et recevez un résumé instantané : résultat net en € et BB/100, top adversaires de la session, progression par stake sur le long terme.</p>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ══ ACCESS FORM ════════════════════════════════════════ -->
+<div class="access-section" id="access-form">
+  <div class="access-inner">
+    <div class="access-label" data-reveal>Accès privé</div>
+    <h2 class="access-title" data-reveal style="transition-delay:.1s">Rejoignez la liste d'attente</h2>
+    <p class="access-sub" data-reveal style="transition-delay:.2s">
+      PokerLens est actuellement en accès restreint. Remplissez ce formulaire et je vous contacterai dès qu'une place se libère.
+    </p>
+
+    <div id="form-wrap" data-reveal="scale" style="transition-delay:.3s">
+      <form id="access-form-el" onsubmit="handleSubmit(event)">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="f-prenom">Prénom *</label>
+            <input class="form-input" type="text" id="f-prenom" name="prenom" placeholder="Jean" required autocomplete="given-name">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="f-nom">Nom *</label>
+            <input class="form-input" type="text" id="f-nom" name="nom" placeholder="Dupont" required autocomplete="family-name">
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="f-email">Email *</label>
+          <input class="form-input" type="email" id="f-email" name="email" placeholder="jean@exemple.fr" required autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="f-message">Message <span style="font-weight:400;opacity:.6;">(optionnel)</span></label>
+          <textarea class="form-textarea" id="f-message" name="message" placeholder="Dites-moi en quelques mots où vous en êtes dans votre jeu…"></textarea>
+        </div>
+        <button type="submit" class="form-submit" id="form-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Envoyer ma demande
+        </button>
+      </form>
+    </div>
+
+    <div class="form-success" id="form-success">
+      <div class="form-success-icon">✓</div>
+      <div class="form-success-title">Demande envoyée !</div>
+      <div class="form-success-sub">Merci pour votre intérêt. Je vous répondrai dès que possible à l'adresse indiquée.</div>
+    </div>
+
+    <p class="form-note" data-reveal style="transition-delay:.45s">
+      Votre email ne sera jamais partagé. Aucun spam.
+    </p>
+  </div>
+</div>
+
+<!-- ══ FOOTER ════════════════════════════════════════════ -->
+<footer>
+  <a href="#" class="footer-logo">
+    <div class="footer-logo-icon">♠</div>
+    <span class="footer-logo-name">PokerLens</span>
+  </a>
+  <span class="footer-copy">© 2026 PokerLens. Tous droits réservés.</span>
+</footer>
+
+<script>
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const btn  = document.getElementById('form-btn');
+    const form = document.getElementById('access-form-el');
+
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Envoi en cours…`;
+
+    const data = new FormData(form);
+
+    try {
+      const res = await fetch('https://formspree.io/f/REPLACE_WITH_YOUR_ID', {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (res.ok) {
+        document.getElementById('form-wrap').style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+      } else {
+        const json = await res.json().catch(() => ({}));
+        const msg  = (json.errors && json.errors[0] && json.errors[0].message) || 'Une erreur est survenue. Essayez à nouveau.';
+        alert(msg);
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer ma demande`;
+      }
+    } catch {
+      alert('Erreur réseau. Vérifiez votre connexion et réessayez.');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer ma demande`;
+    }
+  }
+
+  /* ── GlowCard pointer tracking ── */
+  document.addEventListener('pointermove', e => {
+    document.querySelectorAll('[data-glow]').forEach(el => {
+      el.style.setProperty('--x',  e.clientX.toFixed(2));
+      el.style.setProperty('--xp', (e.clientX / window.innerWidth).toFixed(4));
+      el.style.setProperty('--y',  e.clientY.toFixed(2));
+      el.style.setProperty('--yp', (e.clientY / window.innerHeight).toFixed(4));
+    });
+  });
+
+  /* ── Scroll reveal ── */
+  (function () {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('revealed');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+  })();
+
+  /* ── Nav reveal on scroll ── */
+  (function () {
+    const nav = document.querySelector('nav');
+    function check() {
+      nav.classList.toggle('nav-visible', window.scrollY > 60);
+    }
+    window.addEventListener('scroll', check, { passive: true });
+    check();
+  })();
+
+  /* Spinner keyframe */
+  const style = document.createElement('style');
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+
+  /* ── Liquid Metal Button shader ── */
+  (function () {
+    const canvas = document.getElementById('lmb-canvas');
+    const container = document.getElementById('lmb-shader-container');
+    const btn = document.getElementById('lmb-btn');
+    if (!canvas || !container || !btn) return;
+
+    const gl = canvas.getContext('webgl2');
+    if (!gl) return;
+
+    const VS = `#version 300 es
+      in vec2 a_position;
+      out vec2 v_objectUV;
+      void main() {
+        v_objectUV = a_position * 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+
+    /* Chrome/liquid-metal look: angled stripes + noise distortion + RGB shift */
+    const FS = `#version 300 es
+      precision mediump float;
+      uniform float u_time;
+      uniform float u_speed;
+      in vec2 v_objectUV;
+      out vec4 fragColor;
+
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        vec2 u = f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),
+                   mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
+      }
+
+      void main() {
+        vec2 uv = v_objectUV + 0.5;
+        float t = u_time * u_speed;
+
+        /* 45-degree rotation */
+        float a = radians(45.0);
+        vec2 ruv = vec2(uv.x*cos(a)-uv.y*sin(a), uv.x*sin(a)+uv.y*cos(a));
+
+        /* Noise distortion */
+        float n  = noise(uv * 3.5 + t * 0.25);
+        float n2 = noise(uv * 6.0 - t * 0.18);
+        float dist = (n - 0.5) * 0.18 + (n2 - 0.5) * 0.08;
+
+        /* Stripe with chromatic aberration */
+        float rep = 8.0;
+        float base = ruv.x * rep + t * 0.55 + dist * rep;
+        float shiftR = 0.30, shiftB = 0.30;
+        float r = 0.5 + 0.5 * sin(base + shiftR);
+        float g = 0.5 + 0.5 * sin(base);
+        float b = 0.5 + 0.5 * sin(base - shiftB);
+
+        /* Silver palette: desaturate + brighten */
+        vec3 col = vec3(r, g, b);
+        float lum = dot(col, vec3(0.299, 0.587, 0.114));
+        col = mix(col, vec3(lum), 0.35);   /* desaturate */
+        col = col * 0.75 + 0.12;           /* metallic darkening */
+
+        /* Soft vignette so edges are darker */
+        float vig = 1.0 - smoothstep(0.3, 0.9, length((uv - 0.5) * vec2(2.5, 1.0)));
+        col *= 0.55 + 0.45 * vig;
+
+        fragColor = vec4(col, 1.0);
+      }
+    `;
+
+    function compile(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src); gl.compileShader(s); return s;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog); gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'a_position');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+    const uTime  = gl.getUniformLocation(prog, 'u_time');
+    const uSpeed = gl.getUniformLocation(prog, 'u_speed');
+
+    let currentSpeed = 0.6, targetSpeed = 0.6, startTime = null;
+    function resize() {
+      const w = Math.floor(container.clientWidth  * Math.min(devicePixelRatio, 2));
+      const h = Math.floor(container.clientHeight * Math.min(devicePixelRatio, 2));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; gl.viewport(0,0,w,h); }
+    }
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      resize();
+      currentSpeed += (targetSpeed - currentSpeed) * 0.06;
+      gl.uniform1f(uTime,  (ts - startTime) * 0.001);
+      gl.uniform1f(uSpeed, currentSpeed);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    /* Interactions */
+    btn.addEventListener('mouseenter', () => { targetSpeed = 1.0; });
+    btn.addEventListener('mouseleave', () => { targetSpeed = 0.6; });
+    btn.addEventListener('mousedown',  () => { targetSpeed = 2.4; });
+    btn.addEventListener('mouseup',    () => { targetSpeed = 1.0; });
+    btn.addEventListener('click', e => {
+      const r = btn.getBoundingClientRect();
+      const rip = document.createElement('span');
+      rip.className = 'lmb-ripple';
+      rip.style.left = (e.clientX - r.left) + 'px';
+      rip.style.top  = (e.clientY - r.top)  + 'px';
+      btn.appendChild(rip);
+      setTimeout(() => rip.remove(), 620);
+      setTimeout(() => { targetSpeed = 0.6; }, 300);
+    });
+  })();
+
+  /* ── Cycling hero phrase ── */
+  const phrases = [
+    'Voyez ce que les autres ne voient pas.',
+    'Chaque faille a un prix.',
+    'Jouez avec la donnée, pas au hasard.',
+    'Votre avantage commence ici.',
+    'Lisez le jeu. Exploitez l\'avantage.',
+  ];
+  let phraseIndex = 0;
+  const phraseEl = document.getElementById('hero-phrase');
+  setInterval(() => {
+    phraseIndex = (phraseIndex + 1) % phrases.length;
+    phraseEl.style.animation = 'none';
+    phraseEl.offsetHeight; // reflow
+    phraseEl.textContent = phrases[phraseIndex];
+    phraseEl.style.animation = 'phraseSlide 0.6s cubic-bezier(0.22,1,0.36,1) both';
+  }, 3200);
+
+  /* ── Magnetic text ── */
+  (function () {
+    const wrap   = document.getElementById('magnetic-wrap');
+    const circle = document.getElementById('magnetic-circle');
+    const inner  = document.getElementById('magnetic-inner');
+    if (!wrap || !circle || !inner) return;
+
+    const mouse  = { x: 0, y: 0 };
+    const cur    = { x: 0, y: 0 };
+    let hovered  = false;
+    let rafId    = null;
+    let wrapW = 0, wrapH = 0;
+
+    function updateSize() {
+      wrapW = wrap.offsetWidth;
+      wrapH = wrap.offsetHeight;
+      inner.style.width  = wrapW + 'px';
+      inner.style.height = wrapH + 'px';
+      inner.style.top    = '50%';
+      inner.style.left   = '50%';
+      inner.style.marginTop  = (-wrapH / 2) + 'px';
+      inner.style.marginLeft = (-wrapW / 2) + 'px';
+    }
+    updateSize();
+    window.addEventListener('resize', updateSize);
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function tick() {
+      cur.x = lerp(cur.x, mouse.x, 0.15);
+      cur.y = lerp(cur.y, mouse.y, 0.15);
+      circle.style.transform = `translate(calc(${cur.x}px - 50%), calc(${cur.y}px - 50%))`;
+      inner.style.transform  = `translate(${-cur.x + wrapW/2}px, ${-cur.y + wrapH/2}px)`;
+      rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+
+    wrap.addEventListener('mouseenter', e => {
+      const r = wrap.getBoundingClientRect();
+      mouse.x = cur.x = e.clientX - r.left;
+      mouse.y = cur.y = e.clientY - r.top;
+      hovered = true;
+      circle.classList.add('active');
+    });
+    wrap.addEventListener('mousemove', e => {
+      const r = wrap.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+    });
+    wrap.addEventListener('mouseleave', () => {
+      hovered = false;
+      circle.classList.remove('active');
+    });
+  })();
+
+
+</script>
+
+<script>
+  /* ── MeshGradient — extracted from @paper-design/shaders@0.0.72 ── */
+  (function () {
+    const canvas = document.getElementById('hero-canvas');
+    const gl = canvas.getContext('webgl2');
+    if (!gl) return;
+
+    /* ── Vertex shader (matches library's vertex-shader.js) ── */
+    const VS = `#version 300 es
+      in vec2 a_position;
+      out vec2 v_objectUV;
+      void main() {
+        v_objectUV = a_position * 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+
+    /* ── Fragment shader (extracted verbatim from mesh-gradient.js) ── */
+    const FS = `#version 300 es
+      precision mediump float;
+
+      uniform float u_time;
+      uniform vec4  u_colors[10];
+      uniform float u_colorsCount;
+      uniform float u_distortion;
+      uniform float u_swirl;
+      uniform float u_grainMixer;
+      uniform float u_grainOverlay;
+
+      in  vec2 v_objectUV;
+      out vec4 fragColor;
+
+      float hash21(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      vec2 rotate2(vec2 v, float angle) {
+        float c = cos(angle), s = sin(angle);
+        return mat2(c, -s, s, c) * v;
+      }
+
+      float valueNoise(vec2 st) {
+        vec2 i = floor(st), f = fract(st);
+        float a = hash21(i);
+        float b = hash21(i + vec2(1.0, 0.0));
+        float c = hash21(i + vec2(0.0, 1.0));
+        float d = hash21(i + vec2(1.0, 1.0));
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+      }
+
+      vec2 getPosition(int i, float t) {
+        float a = float(i) * 0.37;
+        float b = 0.6 + fract(float(i) / 3.0) * 0.9;
+        float c = 0.8 + fract(float(i + 1) / 4.0);
+        return 0.5 + 0.5 * vec2(sin(t * b + a), cos(t * c + a * 1.5));
+      }
+
+      void main() {
+        vec2 uv = v_objectUV + 0.5;
+        vec2 grainUV = uv * 1000.0;
+
+        float grain = valueNoise(grainUV);
+        float mixerGrain = 0.4 * u_grainMixer * (grain - 0.5);
+
+        float t = 0.5 * (u_time + 41.5);
+
+        float radius = smoothstep(0.0, 1.0, length(uv - 0.5));
+        float center = 1.0 - radius;
+        for (float i = 1.0; i <= 2.0; i++) {
+          uv.x += u_distortion * center / i * sin(t + i * 0.4 * smoothstep(0.0, 1.0, uv.y)) * cos(0.2 * t + i * 2.4 * smoothstep(0.0, 1.0, uv.y));
+          uv.y += u_distortion * center / i * cos(t + i * 2.0 * smoothstep(0.0, 1.0, uv.x));
+        }
+
+        vec2 uvR = uv - 0.5;
+        uvR = rotate2(uvR, -3.0 * u_swirl * radius);
+        uvR += 0.5;
+
+        vec3 color = vec3(0.0);
+        float opacity = 0.0, totalWeight = 0.0;
+        for (int i = 0; i < 10; i++) {
+          if (i >= int(u_colorsCount)) break;
+          vec2 pos = getPosition(i, t) + mixerGrain;
+          float dist = pow(length(uvR - pos), 3.5);
+          float w = 1.0 / (dist + 1e-3);
+          color       += u_colors[i].rgb * u_colors[i].a * w;
+          opacity     += u_colors[i].a * w;
+          totalWeight += w;
+        }
+        color   /= max(1e-4, totalWeight);
+        opacity /= max(1e-4, totalWeight);
+
+        float go = valueNoise(rotate2(grainUV, 1.0) + vec2(3.0));
+        go = mix(go, valueNoise(rotate2(grainUV, 2.0) + vec2(-1.0)), 0.5);
+        go = pow(go, 1.3);
+        float gov = go * 2.0 - 1.0;
+        float gos = pow(u_grainOverlay * abs(gov), 0.8);
+        color = mix(color, vec3(step(0.0, gov)), 0.35 * gos);
+        opacity = clamp(opacity + 0.5 * gos, 0.0, 1.0);
+
+        fragColor = vec4(color, opacity);
+      }
+    `;
+
+    /* ── Compile & link ── */
+    function compile(type, src) {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      return s;
+    }
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER,   VS));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+
+    /* ── Fullscreen quad ── */
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+    const posLoc = gl.getAttribLocation(prog, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+    /* ── Uniforms ── */
+    const uTime        = gl.getUniformLocation(prog, 'u_time');
+    const uColors      = gl.getUniformLocation(prog, 'u_colors');
+    const uColorsCount = gl.getUniformLocation(prog, 'u_colorsCount');
+    const uDistortion  = gl.getUniformLocation(prog, 'u_distortion');
+    const uSwirl       = gl.getUniformLocation(prog, 'u_swirl');
+    const uGrainMixer  = gl.getUniformLocation(prog, 'u_grainMixer');
+    const uGrainOverlay= gl.getUniformLocation(prog, 'u_grainOverlay');
+
+    /* Colors from demo.tsx: ["#000000","#1a1a1a","#333333","#ffffff"] → vec4 RGBA */
+    function hexToVec4(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255, 1.0];
+    }
+    const colorList = ['#000000','#111111','#1e1e1e','#383838'].map(hexToVec4);
+    const flatColors = colorList.flat();
+
+    gl.uniform4fv(uColors, flatColors);
+    gl.uniform1f(uColorsCount, colorList.length);
+    gl.uniform1f(uDistortion,   0.5);
+    gl.uniform1f(uSwirl,        0.5);
+    gl.uniform1f(uGrainMixer,   0.5);
+    gl.uniform1f(uGrainOverlay, 0.3);
+
+    /* ── Resize ── */
+    function resize() {
+      const w = Math.floor(canvas.clientWidth  * Math.min(devicePixelRatio, 2));
+      const h = Math.floor(canvas.clientHeight * Math.min(devicePixelRatio, 2));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w; canvas.height = h;
+        gl.viewport(0, 0, w, h);
+      }
+    }
+
+    /* ── Render loop ── */
+    let startTime = null;
+    const SPEED = 1.0; // matches demo speed={1.0}
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      resize();
+      gl.uniform1f(uTime, (ts - startTime) * 0.001 * SPEED);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+</script>
+</body>
+</html>
