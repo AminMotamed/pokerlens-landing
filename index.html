@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PokerLens — Cash Game HUD</title>
+  <title>PokerLens — Analyse tes sessions de poker</title>
+  <meta name="description" content="PokerLens analyse tes mains de cash game et transforme tes historiques en stats exploitables. Repère les leaks, exploite tes adversaires.">
+  <meta property="og:title" content="PokerLens — Analyse tes sessions de poker">
+  <meta property="og:description" content="Transforme tes historiques de mains en stats exploitables. Repère tes leaks, exploite tes adversaires, progresse plus vite.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://pokerlens.fr">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PokerLens — Analyse tes sessions de poker">
+  <meta name="twitter:description" content="Transforme tes historiques de mains en stats exploitables. Repère tes leaks, exploite tes adversaires.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1131,36 +1139,39 @@
 <script>
   async function handleSubmit(e) {
     e.preventDefault();
-    const btn  = document.getElementById('form-btn');
     const form = document.getElementById('access-form-el');
-
-    btn.disabled = true;
-    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Envoi en cours…`;
-
     const data = new FormData(form);
 
-    try {
-      const res = await fetch('https://formspree.io/f/REPLACE_WITH_YOUR_ID', {
-        method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
-      });
+    const prenom  = data.get('prenom') || '';
+    const nom     = data.get('nom') || '';
+    const email   = data.get('email') || '';
+    const stake   = data.get('stake') || '';
+    const room    = data.get('room') || '';
+    const message = data.get('message') || '';
 
-      if (res.ok) {
-        document.getElementById('form-wrap').style.display = 'none';
-        document.getElementById('form-success').style.display = 'block';
-      } else {
-        const json = await res.json().catch(() => ({}));
-        const msg  = (json.errors && json.errors[0] && json.errors[0].message) || 'Une erreur est survenue. Essayez à nouveau.';
-        alert(msg);
-        btn.disabled = false;
-        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer ma demande`;
-      }
-    } catch {
-      alert('Erreur réseau. Vérifiez votre connexion et réessayez.');
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer ma demande`;
-    }
+    const subject = encodeURIComponent('Demande d'accès PokerLens — ' + prenom + ' ' + nom);
+    const body    = encodeURIComponent(
+      'Prénom : ' + prenom + '
+' +
+      'Nom : ' + nom + '
+' +
+      'Email : ' + email + '
+' +
+      'Stake : ' + stake + '
+' +
+      'Room : ' + room + '
+
+' +
+      (message ? 'Message :
+' + message : '')
+    );
+
+    window.location.href = 'mailto:hello@pokerlens.fr?subject=' + subject + '&body=' + body;
+
+    setTimeout(() => {
+      document.getElementById('form-wrap').style.display = 'none';
+      document.getElementById('form-success').style.display = 'block';
+    }, 500);
   }
 
   /* ── GlowCard pointer tracking ── */
