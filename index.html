@@ -1154,16 +1154,11 @@
 
     const subject = encodeURIComponent('Demande accès bêta PokerLens — ' + prenom + ' ' + nom);
     const body    = encodeURIComponent(
-      'Prénom : ' + prenom + '
-' +
-      'Nom : ' + nom + '
-' +
-      'Email : ' + email + '
-' +
-      'Stake : ' + stake + '
-' +
-      (message ? 'Message :
-' + message : '')
+      'Prénom : ' + prenom + '\n' +
+      'Nom : ' + nom + '\n' +
+      'Email : ' + email + '\n' +
+      'Stake : ' + stake + '\n\n' +
+      (message ? 'Message :\n' + message : '')
     );
 
     window.location.href = 'mailto:hello@pokerlens.fr?subject=' + subject + '&body=' + body;
