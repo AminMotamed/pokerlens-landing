@@ -819,7 +819,7 @@
 
 <!-- ══ NAV ══════════════════════════════════════════════ -->
 <nav>
-  <a href="#access-form" class="nav-cta">Demander l'accès</a>
+  <a href="#access-form" class="nav-cta">Rejoindre la bêta</a>
 </nav>
 
 <!-- ══ HERO ══════════════════════════════════════════════ -->
@@ -846,7 +846,7 @@
     <div class="lmb-wrap">
       <!-- Label -->
       <div class="lmb-label-layer">
-        <span class="lmb-label">Demander l'accès</span>
+        <span class="lmb-label">Rejoindre la bêta</span>
       </div>
       <!-- Inner dark pill -->
       <div class="lmb-inner-layer" id="lmb-inner-layer">
@@ -859,7 +859,7 @@
         </div>
       </div>
       <!-- Invisible click target -->
-      <button class="lmb-btn" id="lmb-btn" aria-label="Demander l'accès" onclick="location.href='#access-form'"></button>
+      <button class="lmb-btn" id="lmb-btn" aria-label="Rejoindre la bêta" onclick="location.href='#access-form'"></button>
     </div>
   </div>
 
@@ -882,7 +882,7 @@
       <span class="how-num">01</span>
       <div>
         <strong>Importez vos mains</strong>
-        <p>Glissez vos fichiers d'historique depuis PokerStars ou Winamax. L'analyse démarre immédiatement.</p>
+        <p>Glissez vos fichiers d'historique Betclic. L'analyse démarre immédiatement.</p>
       </div>
     </li>
     <li class="how-step" data-reveal style="transition-delay:.35s">
@@ -1082,10 +1082,10 @@
 <!-- ══ ACCESS FORM ════════════════════════════════════════ -->
 <div class="access-section" id="access-form">
   <div class="access-inner">
-    <div class="access-label" data-reveal>Accès privé</div>
-    <h2 class="access-title" data-reveal style="transition-delay:.1s">Rejoignez la liste d'attente</h2>
+    <div class="access-label" data-reveal>Bêta Betclic</div>
+    <h2 class="access-title" data-reveal style="transition-delay:.1s">Rejoignez la bêta</h2>
     <p class="access-sub" data-reveal style="transition-delay:.2s">
-      PokerLens est actuellement en accès restreint. Remplissez ce formulaire et je vous contacterai dès qu'une place se libère.
+      La bêta est actuellement réservée aux joueurs <strong>Betclic</strong>. Remplissez ce formulaire pour demander votre accès.
     </p>
 
     <div id="form-wrap" data-reveal="scale" style="transition-delay:.3s">
@@ -1105,12 +1105,16 @@
           <input class="form-input" type="email" id="f-email" name="email" placeholder="jean@exemple.fr" required autocomplete="email">
         </div>
         <div class="form-field">
+          <label class="form-label" for="f-stake">Stake habituel *</label>
+          <input class="form-input" type="text" id="f-stake" name="stake" placeholder="NL10, NL25, NL50…" required>
+        </div>
+        <div class="form-field">
           <label class="form-label" for="f-message">Message <span style="font-weight:400;opacity:.6;">(optionnel)</span></label>
           <textarea class="form-textarea" id="f-message" name="message" placeholder="Dites-moi en quelques mots où vous en êtes dans votre jeu…"></textarea>
         </div>
         <button type="submit" class="form-submit" id="form-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Envoyer ma demande
+          Demander mon accès bêta
         </button>
       </form>
     </div>
@@ -1146,10 +1150,9 @@
     const nom     = data.get('nom') || '';
     const email   = data.get('email') || '';
     const stake   = data.get('stake') || '';
-    const room    = data.get('room') || '';
     const message = data.get('message') || '';
 
-    const subject = encodeURIComponent('Demande d'accès PokerLens — ' + prenom + ' ' + nom);
+    const subject = encodeURIComponent('Demande accès bêta PokerLens — ' + prenom + ' ' + nom);
     const body    = encodeURIComponent(
       'Prénom : ' + prenom + '
 ' +
@@ -1158,9 +1161,6 @@
       'Email : ' + email + '
 ' +
       'Stake : ' + stake + '
-' +
-      'Room : ' + room + '
-
 ' +
       (message ? 'Message :
 ' + message : '')
